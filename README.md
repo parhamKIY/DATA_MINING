@@ -11,6 +11,7 @@ To build a reliable and scientifically sound model, the following steps were app
 - **Preventing Data Leakage:** The `Avg_Utilization_Ratio` column was removed due to its hidden mathematical correlation with the target variable, ensuring the model is evaluated under real-world conditions. The `CLIENTNUM` column was also dropped as it holds no predictive value.
 - **Missing Value Imputation:** To preserve the data distribution, missing values in numerical columns were filled using the **Median**, while categorical missing values were imputed using the **Mode**.
 - **Outlier Handling:** Outliers in the input features were capped and controlled using the Interquartile Range (IQR) method to reduce their destructive impact on the training process. The target variable (`Credit_Limit`) was left untouched to preserve the essence of the problem.
+- **Multicollinearity Filtering:** An absolute correlation matrix was computed for all independent numerical features prior to scaling. Features exhibiting a cross-correlation threshold higher than **0.85** were automatically dropped. This step eliminated redundant structural information, resolved multicollinearity issues, and simplified the overall input space.
 
 ## Feature Engineering
 To extract hidden behavioral patterns of the customers, new features were engineered from the existing data:
@@ -38,5 +39,9 @@ Based on the evaluations, the **Random Forest** algorithm achieved the best perf
 - **RMSE:** 5862.27
 - **Performance Analysis:** The evaluation demonstrated that the linear model failed to capture the complex patterns in the data. By aggregating multiple decision trees, the Random Forest model achieved a better balance and delivered realistic, scientifically robust performance, even after removing data-leaking features.
 
-### Feature Importance Analysis
-Extracting feature importance from the Random Forest model revealed that `Income_Category` and `Card_Category` played the most significant roles in accurately predicting the customers' credit limits.
+### Feature Importance Analysis & Model Parsimony
+Extracting feature importance scores from the trained Random Forest model revealed that `Income_Category` and `Card_Category` played the most significant roles in accurately predicting the customers' credit limits. 
+
+Following this analytical step, features with near-zero importance (contributing less than 1% to the overall variance reduction within the ensemble trees) were systematically pruned from the dataset. 
+
+Notably, eliminating these low-importance and highly correlated features resulted in **absolutely zero drop or change** in the final model performance ($R^2$ score remained exactly 0.5985 and RMSE remained 5862.27). This outcome successfully demonstrates the principle of **Model Parsimony** (Occam's Razor)—achieving the exact same predictive capability with a much lighter, faster, and cleaner feature set. It effectively safeguards the model against overfitting on environmental noise while significantly enhancing its real-world generalization and interpretability.
