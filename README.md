@@ -1,356 +1,424 @@
-<div align="center">
+# Credit Limit Prediction Using Regression Algorithms
 
-# Credit Limit Prediction with Regression Models
+A complete machine-learning regression project for predicting a bank customer's **credit card limit** from demographic information, account activity, and transaction behavior.
 
-### A data mining project for predicting bank customers' credit limits
-
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
-![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-orange)
-![Pandas](https://img.shields.io/badge/Pandas-Data%20Processing-150458)
-![Scikit-learn](https://img.shields.io/badge/Scikit--learn-Machine%20Learning-F7931E)
-![Status](https://img.shields.io/badge/Status-Completed-success)
-
-</div>
+The project covers the full data-mining workflow: data cleaning, missing-value imputation, feature engineering, categorical encoding, outlier treatment, correlation analysis, feature scaling, model training, evaluation, visualization, and feature-importance analysis.
 
 ---
 
-## Overview
+## Table of Contents
 
-This project develops and compares multiple regression models to predict the credit limit assigned to a bank customer.
-
-The dataset contains demographic information, account characteristics, card details, transaction behavior, and customer activity records. The target variable is:
-
-```text
-Credit_Limit
-```
-
-The project covers the main stages of a standard data mining workflow:
-
-- Data loading and cleaning
-- Duplicate removal
-- Missing-value treatment
-- Feature engineering
-- Categorical encoding
-- Outlier treatment
-- Correlation analysis
-- Feature scaling
-- Regression model training
-- Performance evaluation
-- Feature importance analysis
-- Visual comparison of actual and predicted values
-
-The final comparison shows that the **Random Forest Regressor** provides the best performance among the evaluated models.
+- [Project Objective](#project-objective)
+- [Dataset](#dataset)
+- [Project Workflow](#project-workflow)
+- [Data Preprocessing](#data-preprocessing)
+- [Missing-Value Handling](#missing-value-handling)
+- [Feature Engineering](#feature-engineering)
+- [Outlier Detection and Treatment](#outlier-detection-and-treatment)
+- [Feature Encoding](#feature-encoding)
+- [Correlation Analysis](#correlation-analysis)
+- [Feature Scaling](#feature-scaling)
+- [Regression Models](#regression-models)
+- [Evaluation Metrics](#evaluation-metrics)
+- [Results](#results)
+- [Feature Importance](#feature-importance)
+- [Visualizations](#visualizations)
+- [Installation](#installation)
+- [How to Run](#how-to-run)
+- [Configuration](#configuration)
+- [Project Structure](#project-structure)
+- [Challenges and Future Improvements](#challenges-and-future-improvements)
 
 ---
 
 ## Project Objective
 
-The main objective is to estimate a customer's credit limit using the available banking and demographic features.
+The goal is to predict the target variable:
 
-This is a supervised machine learning problem because:
+```text
+Credit_Limit
+```
 
-- The dataset contains known credit-limit values.
-- `Credit_Limit` is a continuous numerical target.
-- Regression algorithms are therefore used.
+The prediction is based on customer characteristics such as:
+
+- Age and gender
+- Education and marital status
+- Income category
+- Card category
+- Length of relationship with the bank
+- Number of products held
+- Account inactivity and contact frequency
+- Revolving balance
+- Transaction amount and count
+- Changes in transaction behavior
+
+Several regression algorithms are trained and compared to identify the most suitable model for this dataset.
 
 ---
 
 ## Dataset
 
-The original dataset contains:
+The notebook expects the following CSV file in the same directory:
 
-| Item | Value |
-|---|---:|
-| Rows | 10,167 |
-| Columns | 20 |
-| Fully duplicated rows | 35 |
-| Duplicated customer identifiers | 40 |
-| Target column | `Credit_Limit` |
+```text
+CreditPrediction.csv
+```
 
-After removing duplicated customers and unnecessary columns, the cleaned dataset contains:
+### Main Columns
 
-| Item | Value |
-|---|---:|
-| Rows | 10,127 |
-| Retained original columns | 17 |
-| Training samples | 8,101 |
-| Testing samples | 2,026 |
-| Final model features | 18 |
+| Group | Features |
+|---|---|
+| Customer information | `CLIENTNUM`, `Customer_Age`, `Gender`, `Dependent_count` |
+| Demographic information | `Education_Level`, `Marital_Status`, `Income_Category` |
+| Banking product | `Card_Category` |
+| Relationship information | `Months_on_book`, `Total_Relationship_Count` |
+| Customer activity | `Months_Inactive_12_mon`, `Contacts_Count_12_mon` |
+| Financial behavior | `Total_Revolving_Bal`, `Total_Trans_Amt`, `Total_Trans_Ct` |
+| Behavioral changes | `Total_Amt_Chng_Q4_Q1`, `Total_Ct_Chng_Q4_Q1` |
+| Target | `Credit_Limit` |
 
-### Main feature groups
+### Removed Columns
 
-The dataset includes:
+The following columns are removed during preprocessing:
 
-- Customer age and gender
-- Number of dependents
-- Education level
-- Marital status
-- Income category
-- Card category
-- Length of relationship with the bank
-- Number of banking products
-- Inactive months
-- Number of customer contacts
-- Revolving balance
-- Transaction amount and count
-- Changes in transaction behavior
+- `Unnamed: 19`: empty or unnecessary column
+- `CLIENTNUM`: unique customer identifier with no useful predictive meaning
+- `Avg_Utilization_Ratio`: removed to prevent target leakage because it has a direct mathematical relationship with `Credit_Limit`
+
+Duplicate rows and repeated customer identifiers are also removed.
 
 ---
 
-## Data Cleaning
-
-The notebook performs several initial cleaning operations.
-
-### Empty column removal
-
-The column below contains no useful values and is removed:
+## Project Workflow
 
 ```text
-Unnamed: 19
+Load Dataset
+     ↓
+Initial Data Cleaning
+     ↓
+Train/Test Split
+     ↓
+Missing-Value Imputation
+     ↓
+Feature Engineering
+     ↓
+Categorical Encoding
+     ↓
+Outlier Treatment
+     ↓
+Correlation Analysis
+     ↓
+Feature Scaling
+     ↓
+Train Regression Models
+     ↓
+Evaluate and Compare Models
+     ↓
+Feature Importance and Visual Analysis
 ```
 
-### Duplicate removal
-
-Two duplicate checks are applied:
-
-1. Fully duplicated rows are removed.
-2. Repeated `CLIENTNUM` values are removed while keeping the first record.
-
-This reduces the possibility of having the same customer in both the training and testing sets.
-
-### Identifier removal
-
-`CLIENTNUM` is removed after duplicate checking because it is only a unique identifier and does not represent a meaningful predictive feature.
-
-### Target leakage prevention
-
-`Avg_Utilization_Ratio` is removed because it has a direct mathematical relationship with the target variable:
-
-```text
-Avg_Utilization_Ratio ≈ Total_Revolving_Bal / Credit_Limit
-```
-
-Keeping this feature could allow the model to indirectly access information derived from the target.
+The dataset is split before learning preprocessing parameters. This prevents information from the test set from leaking into the training process.
 
 ---
 
-## Missing Values
+## Data Preprocessing
 
-Missing values are handled separately for numerical and categorical columns.
+The preprocessing stage includes:
 
-### Numerical columns
+- Removing empty columns
+- Removing duplicate records
+- Removing duplicate customer IDs
+- Dropping identifier columns
+- Removing leakage-prone features
+- Replacing infinite values with missing values
+- Splitting data into training and testing sets
+- Filling missing values
+- Encoding categorical variables
+- Treating outliers
+- Removing highly correlated features
+- Scaling numerical inputs
 
-Missing numerical values are filled using the median calculated from the training data.
+The train/test split uses:
 
-The median is used because it is less sensitive to extreme values than the mean.
+```python
+test_size=0.2
+random_state=42
+```
 
-### Categorical columns
+This means 80% of the data is used for training and 20% for testing.
 
-Missing categorical values are filled using the most frequent category, also called the mode.
+---
 
-The replacement values are learned only from the training set and then applied to the testing set to reduce data leakage.
+## Missing-Value Handling
 
-The original cleaned data contains missing values in columns such as:
+Three missing-value handling methods are available.
 
-- `Gender`
-- `Marital_Status`
-- `Card_Category`
-- `Months_on_book`
-- `Total_Relationship_Count`
+### 1. Median and Mode Imputation
+
+For numerical features, missing values are replaced with the median calculated from the training set.
+
+For categorical features, missing values are replaced with the most frequent category, or mode.
+
+**Advantages**
+
+- Simple and fast
+- Easy to interpret
+- Resistant to numerical outliers
+- Suitable as a baseline
+
+**Limitations**
+
+- Does not use relationships between features
+- May reduce the natural variation of the data
+
+### 2. KNN Imputer
+
+`KNNImputer` estimates missing numerical values using the most similar customers in the training data.
+
+The implementation uses five neighbors. With distance-based weighting, closer neighbors have a greater effect on the estimated value.
+
+**Advantages**
+
+- Uses similarity between customers
+- Considers relationships among numerical variables
+- Can create more realistic values than median filling
+
+**Limitations**
+
+- More computationally expensive
+- Sensitive to feature scales
+- May perform poorly when many values are missing
+
+Categorical missing values are still filled using the mode.
+
+### 3. MICE
+
+MICE stands for **Multiple Imputation by Chained Equations**.
+
+The project uses a MICE-style iterative approach through Scikit-learn's `IterativeImputer`. Each numerical feature containing missing values is temporarily predicted from the other numerical features, and the process is repeated for several iterations.
+
+**Advantages**
+
+- Uses relationships among multiple features
+- Can preserve correlations between variables
+- Produces more informed estimates
+
+**Limitations**
+
+- Slower and more complex
+- Depends on the estimator and iteration count
+- Cannot directly process categorical columns in this implementation
+
+Categorical missing values are handled separately using the mode.
+
+### Data-Leakage Prevention
+
+For every imputation method:
+
+1. The imputer is fitted only on `X_train`.
+2. The fitted imputer transforms `X_train`.
+3. The same fitted imputer transforms `X_test`.
+
+No replacement values are learned from the test set.
 
 ---
 
 ## Feature Engineering
 
-Four additional features are created from the original banking variables.
+Four behavioral features are created from the original columns.
 
-### Average transaction amount
-
-```text
-Avg_Transaction_Amount =
-Total_Trans_Amt / Total_Trans_Ct
-```
-
-This feature represents the average amount spent per transaction.
-
-### Transactions per month
+### Average Transaction Amount
 
 ```text
-Transactions_per_Month =
-Total_Trans_Ct / Months_on_book
+Avg_Transaction_Amount = Total_Trans_Amt / Total_Trans_Ct
 ```
 
-This measures the customer's average monthly transaction frequency.
+Represents the average amount spent per transaction.
 
-### Transaction amount per month
+### Transactions per Month
 
 ```text
-Amount_per_Month =
-Total_Trans_Amt / Months_on_book
+Transactions_per_Month = Total_Trans_Ct / Months_on_book
 ```
 
-This represents the customer's average monthly transaction volume.
+Represents the customer's average transaction frequency.
 
-### Inactive rate
+### Transaction Amount per Month
 
 ```text
-Inactive_Rate =
-Months_Inactive_12_mon / 12
+Amount_per_Month = Total_Trans_Amt / Months_on_book
 ```
 
-This feature represents the proportion of inactive months during the last year.
+Represents average monthly transaction volume.
 
-Zero denominators are replaced with missing values before division, and infinite values are converted to missing values for safe processing.
+### Inactive Rate
+
+```text
+Inactive_Rate = Months_Inactive_12_mon / 12
+```
+
+Represents the proportion of inactive months during the last year.
+
+Division by zero is handled by temporarily replacing zero denominators with missing values. Infinite outputs are then converted to missing values and processed by the selected imputation method.
 
 ---
 
-## Categorical Encoding
+## Outlier Detection and Treatment
 
-Machine learning algorithms require numerical input, so categorical variables are converted into numerical form.
+Three configurable methods are included.
 
-### Ordinal encoding
+### 1. Interquartile Range
 
-Ordered categories are mapped to increasing numerical values.
+The IQR method calculates the first and third quartiles:
 
-The following columns use ordinal encoding:
+```text
+IQR = Q3 - Q1
+Lower Bound = Q1 - 1.5 × IQR
+Upper Bound = Q3 + 1.5 × IQR
+```
 
-- `Education_Level`
-- `Income_Category`
-- `Card_Category`
+Values outside the bounds are clipped to the nearest boundary.
 
-For example, card categories are represented in this order:
+This method is robust for skewed financial data.
+
+### 2. Z-Score
+
+The Z-score approach uses three standard deviations from the training mean:
+
+```text
+Lower Bound = Mean - 3 × Standard Deviation
+Upper Bound = Mean + 3 × Standard Deviation
+```
+
+Values outside this range are clipped.
+
+This approach works best when feature distributions are approximately normal.
+
+### 3. Isolation Forest
+
+Isolation Forest is an unsupervised anomaly-detection algorithm.
+
+It isolates unusual observations through random partitions. Samples detected as anomalies are treated using median values from the training set.
+
+The configured contamination value is:
+
+```python
+contamination=0.05
+```
+
+This represents an expected outlier proportion of approximately 5%.
+
+### Important Detail
+
+Outlier statistics and models are learned from the training set. The resulting rules are then applied to the test set to reduce data leakage.
+
+The target variable is not included in outlier treatment.
+
+---
+
+## Feature Encoding
+
+### Ordinal Encoding
+
+Ordered categorical features are manually mapped to numerical values.
+
+#### Education Level
+
+```text
+Unknown < Uneducated < High School < College
+< Graduate < Post-Graduate < Doctorate
+```
+
+#### Income Category
+
+```text
+Unknown < Less than $40K < $40K-$60K
+< $60K-$80K < $80K-$120K < $120K+
+```
+
+#### Card Category
 
 ```text
 Blue < Silver < Gold < Platinum
 ```
 
-### One-hot encoding
+### One-Hot Encoding
 
-Categorical variables without a natural order are transformed using one-hot encoding.
-
-Examples include:
-
-- `Gender`
-- `Marital_Status`
-
-The training and testing DataFrames are aligned after encoding to guarantee identical columns and column order.
-
----
-
-## Outlier Treatment
-
-The notebook supports three outlier-processing methods through the `OUTLIER_METHOD` variable.
-
-The currently selected method is:
+Nominal variables without a meaningful order, such as gender and marital status, are converted using one-hot encoding.
 
 ```python
-OUTLIER_METHOD = "IQR"
+pd.get_dummies(..., drop_first=True)
 ```
 
-### 1. Interquartile Range
-
-The IQR method uses the first and third quartiles:
-
-```text
-IQR = Q3 - Q1
-Lower bound = Q1 - 1.5 × IQR
-Upper bound = Q3 + 1.5 × IQR
-```
-
-Values outside these limits are clipped to the calculated boundaries.
-
-This is the active method because it is robust for skewed numerical data.
-
-### 2. Z-Score
-
-The Z-Score option creates boundaries using three standard deviations from the mean:
-
-```text
-Lower bound = Mean - 3 × Standard Deviation
-Upper bound = Mean + 3 × Standard Deviation
-```
-
-Values beyond these limits are clipped.
-
-### 3. Isolation Forest
-
-Isolation Forest is an anomaly-detection algorithm that identifies observations that are easier to isolate from the rest of the dataset.
-
-In this implementation:
-
-- The expected outlier proportion is set to 5%.
-- Detected anomalous numerical values are replaced with the training median.
-
-All outlier boundaries or models are learned from the training data and then applied to the testing data.
+Training and testing columns are aligned after encoding to guarantee identical feature structures.
 
 ---
 
 ## Correlation Analysis
 
-A correlation matrix is calculated for the independent training features.
+A correlation matrix is calculated from the processed training features and visualized using a heatmap.
 
-The absolute correlation value is used so that both strong positive and strong negative relationships can be detected.
+Features with an absolute pairwise correlation greater than `0.85` are identified as highly correlated and removed.
 
-Features with an absolute correlation greater than `0.85` are removed to reduce redundant information.
+In the saved notebook run, the following features were removed:
 
-The following features are removed by the current notebook:
+- `Total_Trans_Ct`
+- `Avg_Transaction_Amount`
+- `Amount_per_Month`
+- `Inactive_Rate`
 
-```text
-Total_Trans_Ct
-Avg_Transaction_Amount
-Amount_per_Month
-Inactive_Rate
-```
-
-A heatmap is also generated to visually inspect the relationships between features.
+This step reduces redundant information and may improve model stability.
 
 ---
 
 ## Feature Scaling
 
-The notebook supports two scaling methods:
+Two scaling methods are supported.
 
-- `StandardScaler`
-- `MinMaxScaler`
+### StandardScaler
 
-The current configuration uses:
+Transforms each feature to approximately zero mean and unit variance.
 
 ```python
 SCALING_METHOD = "Standard"
 ```
 
-`StandardScaler` transforms each feature so that it has approximately:
+### MinMaxScaler
 
-- Mean equal to 0
-- Standard deviation equal to 1
+Transforms features into a fixed range, usually from 0 to 1.
 
-The scaler is fitted on the training data and only transformed on the testing data.
+```python
+SCALING_METHOD = "MinMax"
+```
 
-Scaling is especially important for distance-based algorithms such as K-Nearest Neighbors.
+The scaler is fitted only on the training data and then applied to the test data.
+
+Scaling is especially important for:
+
+- Linear Regression
+- K-Nearest Neighbors
+
+Tree-based models generally do not require scaling, but a shared scaled feature matrix is used to provide a consistent comparison.
 
 ---
 
 ## Regression Models
 
-Four regression algorithms are trained and compared.
+Four regression algorithms are compared.
 
 ### Linear Regression
 
-Linear Regression estimates a linear relationship between the input features and the target.
-
-It is simple, fast, and useful as a baseline model.
+A simple and interpretable baseline model that assumes a linear relationship between predictors and the target.
 
 ### Decision Tree Regressor
 
-Decision Tree creates a tree of decision rules and can model nonlinear relationships.
-
-It is easy to interpret but may overfit the training data.
+A nonlinear tree-based model that divides data using decision rules.
 
 ### Random Forest Regressor
 
-Random Forest combines predictions from multiple decision trees.
+An ensemble of multiple decision trees. Predictions are calculated by averaging tree outputs.
 
-The notebook uses:
+Configuration:
 
 ```python
 RandomForestRegressor(
@@ -359,19 +427,15 @@ RandomForestRegressor(
 )
 ```
 
-Combining many trees generally improves stability and reduces overfitting compared with one decision tree.
-
 ### K-Nearest Neighbors Regressor
 
-KNN predicts a value using the nearest training samples.
+A distance-based model that predicts the target from nearby training samples.
 
-The notebook uses:
+Configuration:
 
 ```python
 KNeighborsRegressor(n_neighbors=5)
 ```
-
-Because KNN relies on distances, feature scaling is important for this algorithm.
 
 ---
 
@@ -381,58 +445,68 @@ The models are evaluated using four regression metrics.
 
 ### Mean Absolute Error
 
-MAE is the average absolute difference between actual and predicted values.
+```text
+MAE = average absolute prediction error
+```
 
 Lower values are better.
 
 ### Mean Squared Error
 
-MSE is the average squared prediction error.
+```text
+MSE = average squared prediction error
+```
 
-It gives more weight to large errors.
+Larger errors receive a stronger penalty.
 
 ### Root Mean Squared Error
 
-RMSE is the square root of MSE and has the same unit as the target variable.
+```text
+RMSE = square root of MSE
+```
 
-Lower values are better.
+RMSE is expressed in the same unit as `Credit_Limit`. Lower values are better.
 
-### R² Score
+### Coefficient of Determination
 
-R² measures the proportion of variation in `Credit_Limit` explained by the model.
+```text
+R² = proportion of target variance explained by the model
+```
 
-Higher values are better, and a value closer to 1 indicates stronger performance.
+Values closer to 1 indicate better explanatory performance.
 
 ---
 
-## Model Results
+## Results
 
-The current notebook produces the following test-set results:
+The following results were recorded in the saved notebook output using the default preprocessing configuration:
 
 | Model | R² Score | RMSE | MAE |
 |---|---:|---:|---:|
-| **Random Forest** | **0.5910** | **5,916.16** | **3,891.83** |
-| Linear Regression | 0.4336 | 6,962.23 | 4,949.88 |
-| K-Nearest Neighbors | 0.4028 | 7,149.06 | 4,748.14 |
-| Decision Tree | 0.1516 | 8,521.44 | 5,188.68 |
+| Linear Regression | 0.4336 | 6962.23 | 4949.88 |
+| Decision Tree | 0.1516 | 8521.44 | 5188.68 |
+| **Random Forest** | **0.5910** | **5916.16** | **3891.83** |
+| K-Nearest Neighbors | 0.4028 | 7149.06 | 4748.14 |
 
-### Selected model
+### Best Model
 
-Random Forest is selected as the best model because it achieves:
+Random Forest achieved:
 
 - The highest R² score
 - The lowest RMSE
 - The lowest MAE
 
-The model explains approximately **59.1%** of the variation in customer credit limits on the current test split.
+Therefore, Random Forest was selected as the strongest model in the recorded run.
+
+> Results may change when a different missing-value, outlier, or scaling method is selected.
 
 ---
 
 ## Feature Importance
 
-The Random Forest model is used to estimate the importance of the input features.
+Random Forest feature importance is used to identify the variables with the greatest influence on credit-limit predictions.
 
-The five most important features in the current run are:
+The five most important features in the saved run were:
 
 | Rank | Feature | Importance |
 |---:|---|---:|
@@ -442,43 +516,138 @@ The five most important features in the current run are:
 | 4 | `Total_Amt_Chng_Q4_Q1` | 0.0569 |
 | 5 | `Total_Ct_Chng_Q4_Q1` | 0.0535 |
 
-The results suggest that income category and card category have the strongest influence on the predicted credit limit.
+Income category and card category had the strongest influence on the Random Forest predictions.
+
+Feature importance represents model behavior and should not automatically be interpreted as a causal relationship.
 
 ---
 
 ## Visualizations
 
-The notebook generates several visual outputs.
+The notebook includes:
 
-### Correlation heatmap
+- Correlation heatmap
+- Top-five Random Forest feature-importance chart
+- Actual-versus-predicted scatter plots
+- Ideal prediction reference line
+- Actual and predicted values for a subset of test samples
+- Error-connection lines between actual and predicted values
+- Comparative plots for all trained models
 
-Displays the relationships between the independent features.
+These visualizations help reveal prediction quality, large errors, model bias, and important variables.
 
-### Feature importance chart
+---
 
-Shows the five most influential variables identified by Random Forest.
+## Installation
 
-### Actual versus predicted plots
+### 1. Clone the Repository
 
-For every regression model, actual credit limits are plotted against predicted values.
-
-The red dashed line represents an ideal prediction where:
-
-```text
-Predicted value = Actual value
+```bash
+git clone <your-repository-url>
+cd <your-repository-name>
 ```
 
-Points closer to this line indicate more accurate predictions.
+### 2. Create a Virtual Environment
 
-### Error connection plots
+Windows:
 
-For the first 50 test samples:
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
 
-- Actual values are displayed as red crosses.
-- Predicted values are displayed as blue circles.
-- Dashed vertical lines show the prediction error for each sample.
+Linux or macOS:
 
-These plots provide a direct visual comparison of model behavior.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install pandas numpy matplotlib seaborn scikit-learn jupyter
+```
+
+### Main Libraries
+
+- Python
+- Pandas
+- NumPy
+- Matplotlib
+- Seaborn
+- Scikit-learn
+- Jupyter Notebook
+
+---
+
+## How to Run
+
+1. Place `CreditPrediction.csv` in the project directory.
+2. Open the notebook:
+
+```bash
+jupyter notebook
+```
+
+3. Select the project notebook.
+4. Choose the desired preprocessing methods.
+5. Run all cells from top to bottom.
+6. Review the metrics, plots, and feature importance.
+
+The code assumes that the CSV file is accessible using:
+
+```python
+pd.read_csv("CreditPrediction.csv")
+```
+
+---
+
+## Configuration
+
+### Missing-Value Method
+
+Select one of the following options:
+
+```python
+MISSING_VALUE_METHOD = "Median_Mode"
+```
+
+```python
+MISSING_VALUE_METHOD = "KNN"
+```
+
+```python
+MISSING_VALUE_METHOD = "MICE"
+```
+
+### Outlier Method
+
+```python
+OUTLIER_METHOD = "IQR"
+```
+
+```python
+OUTLIER_METHOD = "Z-Score"
+```
+
+```python
+OUTLIER_METHOD = "IsolationForest"
+```
+
+### Scaling Method
+
+```python
+SCALING_METHOD = "Standard"
+```
+
+or:
+
+```python
+SCALING_METHOD = "MinMax"
+```
+
+To compare preprocessing strategies fairly, change one setting at a time and rerun all cells from the preprocessing stage onward.
 
 ---
 
@@ -488,11 +657,12 @@ These plots provide a direct visual comparison of model behavior.
 credit-limit-prediction/
 │
 ├── CreditPrediction.csv
-├── Untitled-1(1).ipynb
-└── README.md
+├── Untitled-1.ipynb
+├── README.md
+└── requirements.txt        # optional
 ```
 
-For a cleaner repository, the notebook may optionally be renamed to:
+For a cleaner GitHub repository, the notebook can be renamed to:
 
 ```text
 credit_limit_prediction.ipynb
@@ -500,124 +670,72 @@ credit_limit_prediction.ipynb
 
 ---
 
-## Requirements
+## Challenges and Future Improvements
 
-Recommended environment:
+### Current Challenges
 
-- Python 3.10 or newer
-- Jupyter Notebook or JupyterLab
+- Missing values occur in both numerical and categorical columns.
+- Financial features may contain skewed distributions and extreme values.
+- KNN-based methods are sensitive to feature scales.
+- Some engineered features are strongly correlated with original features.
+- Default model parameters may not provide optimal performance.
+- Model performance can change across different preprocessing combinations.
 
-Required Python packages:
+### Suggested Improvements
 
-```text
-pandas
-numpy
-matplotlib
-seaborn
-scikit-learn
-```
-
-Install all dependencies with:
-
-```bash
-pip install pandas numpy matplotlib seaborn scikit-learn jupyter
-```
-
----
-
-## Running the Project
-
-### 1. Clone the repository
-
-```bash
-git clone <YOUR_REPOSITORY_URL>
-cd credit-limit-prediction
-```
-
-### 2. Install the dependencies
-
-```bash
-pip install pandas numpy matplotlib seaborn scikit-learn jupyter
-```
-
-### 3. Start Jupyter Notebook
-
-```bash
-jupyter notebook
-```
-
-### 4. Open the notebook
-
-Open:
-
-```text
-Untitled-1(1).ipynb
-```
-
-### 5. Run all cells
-
-Make sure `CreditPrediction.csv` is located in the same directory as the notebook.
-
-Then use:
-
-```text
-Kernel → Restart & Run All
-```
+- Compare all missing-value methods in a structured experiment.
+- Record model performance for every preprocessing configuration.
+- Use cross-validation instead of relying on one train/test split.
+- Tune model hyperparameters using `GridSearchCV` or `RandomizedSearchCV`.
+- Add regularized models such as Ridge, Lasso, and Elastic Net.
+- Test gradient-boosting algorithms such as HistGradientBoosting, XGBoost, LightGBM, or CatBoost.
+- Use a Scikit-learn `Pipeline` and `ColumnTransformer` to organize preprocessing.
+- Evaluate target transformations if `Credit_Limit` is highly skewed.
+- Add residual-distribution and heteroscedasticity analysis.
+- Save the final fitted pipeline with `joblib`.
+- Add automated tests and a reproducible `requirements.txt`.
 
 ---
 
 ## Reproducibility
 
-The project uses:
+Random states are fixed where supported:
 
 ```python
 random_state=42
 ```
 
-for train-test splitting, Decision Tree, Random Forest, and Isolation Forest.
+This improves reproducibility for:
 
-This makes the results more reproducible across repeated executions using the same library versions and dataset.
+- Train/test splitting
+- Random Forest
+- Decision Tree
+- Isolation Forest
+- MICE-style iterative imputation
 
----
-
-## Current Limitations
-
-- Model performance is based on one train-test split.
-- Hyperparameter tuning is not included.
-- Correlated features are removed using a fixed threshold.
-- The target variable has a wide and right-skewed distribution.
-- Random Forest feature importance may be affected by feature type and variability.
-- The project does not currently save the trained model to disk.
-- The current results may change with different random seeds or package versions.
+Minor differences may still appear across library versions or computing environments.
 
 ---
 
-## Possible Future Improvements
+## Conclusion
 
-Potential improvements include:
+This project demonstrates an end-to-end regression workflow for predicting customer credit limits.
 
-- Cross-validation for more stable evaluation
-- Hyperparameter tuning for Random Forest
-- Testing Gradient Boosting or Extra Trees
-- Comparing different outlier methods
-- Evaluating the effect of removing correlated features
-- Applying a logarithmic transformation to the target
-- Adding residual-distribution plots
-- Saving the final model and scaler with `joblib`
-- Building a simple interface for entering customer information
+It compares multiple strategies for:
 
----
+- Missing-value imputation
+- Outlier treatment
+- Feature scaling
+- Regression modeling
 
-## Academic Context
+Among the evaluated models in the saved run, **Random Forest** produced the best overall performance. The project also shows that income category, card category, and transaction behavior are among the most influential predictors of customer credit limits.
 
-This repository was developed as an individual project for a Fundamentals of Data Mining course.
-
-Its main purpose is to demonstrate a complete regression workflow, including preprocessing, feature engineering, model comparison, evaluation, and interpretation.
+The modular preprocessing options make the notebook suitable for further experimentation and improvement.
 
 ---
 
-<div align="center">
+## Disclaimer
 
-Developed for educational and academic purposes.
+This project is intended for educational purposes.
 
-</div>
+Credit-limit decisions in real banking systems require additional validation, fairness testing, explainability, regulatory compliance, security controls, and human oversight.
